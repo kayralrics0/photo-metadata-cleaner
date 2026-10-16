@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src blob: data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Kayralrics No Trace removes known privacy metadata from supported images locally in your browser, without re-encoding image data.">
+  <title>No Trace — Kayralrics Photo Metadata Cleaner</title>
+  <style>
+    :root{
+      color-scheme:dark;--bg:#080808;--surface:#101010;--surface-2:#151515;--line:#2c2c2c;
+      --muted:#8b8b8b;--text:#f5f3f1;--red:#ff3b3f;--red-soft:#401315;--green:#a6f3c0;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+    }
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg);scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column;isolation:isolate;position:relative}
+    body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);background-size:46px 46px;mask-image:linear-gradient(to bottom,black,transparent 86%)}
+    body:after{content:"";position:fixed;z-index:-1;pointer-events:none;width:600px;height:600px;top:-300px;left:-200px;background:radial-gradient(circle,#ff303016,transparent 68%)}
+    button,input{font:inherit}
+    button{touch-action:manipulation}
+    .topbar{height:78px;border-bottom:1px solid #242424;display:flex;align-items:center;justify-content:space-between;padding:0 max(26px,calc((100vw - 1220px)/2));gap:20px;background:#080808eF}
+    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;min-width:0}
+    .brand-symbol{width:38px;height:38px;display:grid;place-items:center;position:relative;background:var(--red);color:#090909;clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)}
+    .brand-symbol svg{width:24px;height:24px}
+    .brand-word{display:flex;flex-direction:column;gap:3px;line-height:1}
+    .brand-word strong{font-size:12px;letter-spacing:.14em;font-weight:900}
+    .brand-word small{font-family:var(--mono);font-size:9px;color:#929292;letter-spacing:.12em}
+    .privacy{display:flex;align-items:center;gap:10px;border:1px solid #303030;padding:10px 13px;color:#d5d5d5;font-family:var(--mono);font-size:10px;letter-spacing:.08em;white-space:nowrap}
+    .privacy-dot{height:7px;width:7px;background:var(--green);border-radius:50%;box-shadow:0 0 12px #a6f3c066}
+    main{width:min(1220px,calc(100% - 52px));margin:clamp(42px,8vh,92px) auto 62px;flex:1}
+    .layout{display:grid;grid-template-columns:minmax(0,.92fr) minmax(430px,1.08fr);align-items:center;gap:clamp(36px,6vw,92px)}
+    .intro{padding:8px 0 6px;min-width:0}
+    .eyebrow{display:flex;align-items:center;gap:10px;color:#ff5559;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;margin-bottom:24px}
+    .eyebrow-line{display:inline-block;width:24px;height:2px;background:var(--red)}
+    .eyebrow-index{margin-left:7px;color:#626262;border-left:1px solid #3b3b3b;padding-left:14px}
+    h1{margin:0;font-size:clamp(44px,6vw,78px);line-height:.95;letter-spacing:-.075em;font-weight:920;text-transform:uppercase;max-width:610px}
+    h1 .outline{color:transparent;-webkit-text-stroke:1px #777}
+    h1 .red-text{color:var(--red)}
+    .lede{color:#a5a5a5;font-size:14px;line-height:1.85;max-width:440px;margin:25px 0 36px}
+    .lede strong{color:#f0f0f0;font-weight:650}
+    .steps{border-top:1px solid #2a2a2a;max-width:475px}
+    .step{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #202020}
+    .step-num{font-family:var(--mono);font-size:10px;color:var(--red)}
+    .step-label{font-size:11px;letter-spacing:.09em;font-weight:750;text-transform:uppercase}
+    .step-note{font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#666;text-align:right}
+    .workbench{position:relative;min-width:0;border:1px solid #383838;background:linear-gradient(145deg,#151515,#0c0c0c 76%);box-shadow:0 28px 100px #0008}
+    .workbench:before,.workbench:after{content:"";position:absolute;width:20px;height:20px;pointer-events:none}
+    .workbench:before{left:-1px;top:-1px;border-left:2px solid var(--red);border-top:2px solid var(--red)}
+    .workbench:after{right:-1px;bottom:-1px;border-right:2px solid var(--red);border-bottom:2px solid var(--red)}
+    .panel-head{height:56px;padding:0 19px;border-bottom:1px solid #2b2b2b;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#141414}
+    .panel-label{font-family:var(--mono);font-size:10px;color:#bdbdbd;letter-spacing:.12em}
+    .panel-state{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:.09em}
+    .panel-state:before{content:"";height:6px;width:6px;background:var(--green);border-radius:50%}
+    .panel-content{padding:20px}
+    .dropzone{position:relative;min-height:300px;padding:27px 20px;border:1px dashed #4a4a4a;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:linear-gradient(135deg,#191919,#101010 68%);transition:border-color .18s,background .18s;outline:none;overflow:hidden;cursor:pointer}
+    .dropzone:before{content:"";position:absolute;inset:10px;border:1px solid #ffffff07;pointer-events:none}
+    .dropzone:focus-visible{border-color:var(--red);box-shadow:0 0 0 3px #ff3b3f26}
+    .dropzone.dragover{border-color:var(--red);background:#220f10}
+    .drop-corner{position:absolute;top:15px;left:16px;font-family:var(--mono);font-size:9px;color:#666;letter-spacing:.12em}
+    .drop-counter{position:absolute;right:16px;top:15px;font-family:var(--mono);font-size:9px;color:#666;letter-spacing:.1em}
+    .upload-icon{height:62px;width:62px;display:grid;place-items:center;color:var(--red);background:#2b1012;border:1px solid #6d252a;margin-bottom:20px;transform:rotate(-3deg)}
+    .upload-icon svg{width:28px;height:28px}
+    .drop-title{font-size:19px;letter-spacing:-.04em;font-weight:800;margin:0 0 8px}
+    .drop-sub{font-size:12px;color:#8d8d8d;margin:0 0 20px;line-height:1.65}
+    .button{border:0;border-radius:0;min-height:45px;padding:0 18px;font-weight:800;font-size:11px;letter-spacing:.035em;cursor:pointer;transition:transform .12s,background .12s,border-color .12s,opacity .12s;display:inline-flex;align-items:center;justify-content:center;gap:13px;text-transform:uppercase}
+    .button:active:not(:disabled){transform:translateY(1px)}
+    .button:focus-visible{outline:2px solid white;outline-offset:3px}
+    .button-primary{background:var(--red);color:#160708}
+    .button-primary:hover:not(:disabled){background:#ff5b5f}
+    .button-secondary{background:#171717;color:#e6e6e6;border:1px solid #393939}
+    .button-secondary:hover:not(:disabled){background:#222;border-color:#555}
+    .button:disabled{opacity:.4;cursor:not-allowed}
+    .button-arrow{font-size:17px;font-weight:400;line-height:0}
+    .formats{margin:15px 1px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:9px;color:#777;letter-spacing:.04em}
+    .format-tags{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .format-tag{border:1px solid #303030;padding:4px 6px;color:#aaa;font-size:9px}
+    .file-row{display:none;align-items:center;gap:14px;margin-top:0;margin-bottom:15px;background:#121212;border:1px solid #343434;padding:14px;min-height:88px}
+    .file-row.visible{display:flex}
+    .file-thumb{width:62px;height:62px;flex:0 0 62px;object-fit:contain;background:#080808;border:1px solid #303030}
+    .file-info{min-width:0;flex:1}
+    .file-name{font-family:var(--mono);font-size:11px;color:#f0f0f0;overflow-wrap:anywhere;margin-bottom:7px}
+    .file-meta{font-size:10px;color:#8c8c8c;line-height:1.6}
+    .file-icon{flex:0 0 39px;width:39px;height:39px;display:grid;place-items:center;background:#2b1012;border:1px solid #542025;color:#ff696c;font-family:var(--mono);font-size:9px;font-weight:800}
+    .actions{display:flex;gap:9px;margin-top:15px}
+    .actions .button{flex:1}
+    .result{display:none;margin-top:15px;border:1px solid #2a6544;background:#0c1911;padding:15px}
+    .result.visible{display:block}
+    .result-title{font-family:var(--mono);font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--green);margin:0 0 8px;display:flex;gap:9px;align-items:center;text-transform:uppercase}
+    .result-text{font-size:11px;color:#b6c9bc;line-height:1.7;margin:0}
+    .error{display:none;margin-top:14px;border:1px solid #6b2b30;background:#210e10;padding:13px 14px;color:#ffb2b5;font-size:11px;line-height:1.65}
+    .error.visible{display:block}
+    .panel-foot{padding:14px 20px;border-top:1px solid #292929;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#0b0b0b;font-family:var(--mono);font-size:9px;color:#777;letter-spacing:.055em}
+    .panel-foot span{display:inline-flex;align-items:center;gap:7px}
+    .panel-foot i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--red)}
+    footer{border-top:1px solid #242424;padding:19px max(26px,calc((100vw - 1220px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:#676767;font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase}
+    footer strong{color:#b5b5b5;font-weight:800}
+    footer a{color:var(--red);text-decoration:none}
+    footer a:hover{text-decoration:underline}
+    .hidden{display:none!important}
+    @media(max-width:900px){main{margin-top:50px}.layout{grid-template-columns:1fr;gap:38px}.intro{max-width:660px}.lede{margin-bottom:25px}.steps{max-width:100%}.workbench{max-width:700px;width:100%;margin:0 auto}h1{font-size:clamp(48px,8vw,76px)}}
+    @media(max-width:520px){.topbar{height:68px;padding:0 17px}.brand-symbol{width:34px;height:34px}.brand-word strong{font-size:10px}.brand-word small{font-size:8px}.privacy{padding:9px;font-size:8px;gap:7px}main{width:calc(100% - 34px);margin:38px auto 42px}.eyebrow{font-size:9px;margin-bottom:19px}.eyebrow-index{padding-left:9px}h1{font-size:clamp(43px,13vw,64px)}.lede{font-size:13px;margin:20px 0 26px}.step{grid-template-columns:27px 1fr auto;gap:8px;padding:12px 0}.step-label{font-size:10px}.step-note{font-size:8px}.panel-head{height:50px;padding:0 13px}.panel-label{font-size:9px}.panel-state{font-size:8px}.panel-content{padding:12px}.dropzone{min-height:270px;padding:24px 13px}.drop-title{font-size:17px}.drop-sub{font-size:11px}.formats{align-items:flex-start;font-size:8px}.format-tags{gap:4px}.format-tag{padding:4px;font-size:8px}.file-row{gap:10px;padding:10px}.file-thumb{width:52px;height:52px;flex-basis:52px}.file-icon{display:none}.file-name{font-size:10px}.file-meta{font-size:9px}.actions{flex-direction:column}.actions .button{width:100%}.panel-foot{padding:12px;font-size:8px}footer{padding:16px 17px;font-size:8px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Kayralrics No Trace home">
+      <span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M6 4v16M18 4 7 12l11 8"/></svg></span>
+      <span class="brand-word"><strong>KAYRALRICS</strong><small>NO TRACE / IMAGE UTILITY</small></span>
+    </a>
+    <div class="privacy"><span class="privacy-dot" aria-hidden="true"></span><span>LOCAL PROCESSING</span></div>
+  </header>
+
+  <main id="top">
+    <div class="layout">
+      <section class="intro" aria-labelledby="page-title">
+        <div class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span><span>Digital privacy tool</span><span class="eyebrow-index">ISSUE 001</span></div>
+        <h1 id="page-title">Keep the<br><span class="outline">picture.</span><br>Lose the <span class="red-text">trail.</span></h1>
+        <p class="lede">Strip hidden location, camera details, timestamps, and other known metadata from your photo. <strong>The image is not re-encoded.</strong> Your file stays in this browser.</p>
+        <div class="steps" aria-label="Three simple steps">
+          <div class="step"><span class="step-num">01</span><span class="step-label">Choose an image</span><span class="step-note">INPUT</span></div>
+          <div class="step"><span class="step-num">02</span><span class="step-label">Strip known metadata</span><span class="step-note">CLEAN</span></div>
+          <div class="step"><span class="step-num">03</span><span class="step-label">Save your clean file</span><span class="step-note">EXPORT</span></div>
+        </div>
+      </section>
+
+      <section class="workbench" aria-label="Photo metadata cleaning workspace">
+        <div class="panel-head"><span class="panel-label">WORKSPACE <span style="color:var(--red)">//</span> 001</span><span class="panel-state">BROWSER-ONLY MODE</span></div>
+        <div class="panel-content">
+          <div id="dropzone" class="dropzone" role="group" aria-label="Choose a photo or drag and drop it here" tabindex="0">
+            <span class="drop-corner">INPUT / IMAGE FILE</span><span class="drop-counter">MAX 100 MB</span>
+            <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/><path d="M12 5v5m-2.5-2.5L12 5l2.5 2.5"/></svg></div>
+            <p class="drop-title">Drop an image to begin</p>
+            <p class="drop-sub">Drag a file into this space<br>or browse your device.</p>
+            <button type="button" id="chooseBtn" class="button button-primary">Browse files <span class="button-arrow" aria-hidden="true">↗</span></button>
+            <input id="fileInput" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif" class="hidden" aria-label="Choose a photo to clean">
+          </div>
+          <div class="formats"><span>LOSSLESS CLEANING FOR</span><span class="format-tags"><span class="format-tag">JPG</span><span class="format-tag">PNG</span><span class="format-tag">WEBP</span><span class="format-tag">GIF</span></span></div>
+
+          <div id="fileRow" class="file-row">
+            <img id="fileThumb" class="file-thumb" alt="Preview of the selected photo">
+            <div class="file-info"><div id="fileName" class="file-name"></div><div id="fileMeta" class="file-meta"></div></div>
+            <div id="fileTypeIcon" class="file-icon">IMG</div>
+          </div>
+          <div class="actions">
+            <button id="cleanBtn" type="button" class="button button-primary" disabled>Remove metadata <span class="button-arrow" aria-hidden="true">→</span></button>
+            <button id="resetBtn" type="button" class="button button-secondary hidden">Change image <span class="button-arrow" aria-hidden="true">↗</span></button>
+          </div>
+          <div id="result" class="result" role="status" aria-live="polite">
+            <p class="result-title"><span aria-hidden="true">✓</span><span id="resultTitle">Cleaning complete</span></p>
+            <p id="resultText" class="result-text"></p>
+            <div style="margin-top:13px"><button id="downloadBtn" class="button button-primary" type="button">Download clean file <span class="button-arrow" aria-hidden="true">↓</span></button></div>
+          </div>
+          <div id="error" class="error" role="alert"></div>
+        </div>
+        <div class="panel-foot"><span><i aria-hidden="true"></i> No uploads</span><span><i aria-hidden="true"></i> No account</span><span><i aria-hidden="true"></i> No external API</span></div>
+      </section>
+    </div>
+  </main>
+
+  <footer><span><strong>KAYRALRICS</strong> / NO TRACE</span><span>Built for privacy · <a href="https://kayralrics.net" target="_blank" rel="noopener noreferrer">KAYRALRICS.NET ↗</a></span></footer>
+
+  <script>
+  (() => {
+    'use strict';
+    const MAX_BYTES = 100 * 1024 * 1024;
+    const $ = (id) => document.getElementById(id);
+    const input = $('fileInput'), dropzone = $('dropzone'), chooseBtn = $('chooseBtn');
+    const cleanBtn = $('cleanBtn'), resetBtn = $('resetBtn'), result = $('result'), errorBox = $('error');
+    let selectedFile = null, selectedFormat = null, selectedBytes = null, loadVersion = 0, previewUrl = null, outputUrl = null, outputBlob = null, outputName = '';
+
+    const fmtSize = (n) => n < 1024 ? `${n} B` : n < 1024*1024 ? `${(n/1024).toFixed(1)} KB` : `${(n/1024/1024).toFixed(2)} MB`;
+    const asAscii = (bytes, start, len) => String.fromCharCode(...bytes.subarray(start, start + len));
+    const u32be = (b, i) => ((b[i] * 0x1000000) + (b[i+1] << 16) + (b[i+2] << 8) + b[i+3]) >>> 0;
+    const u32le = (b, i) => (b[i] | (b[i+1] << 8) | (b[i+2] << 16) | (b[i+3] << 24)) >>> 0;
+    const u16le = (b, i) => b[i] | (b[i+1] << 8);
+    const u16be = (b, i) => (b[i] << 8) | b[i+1];
+    const concat = (arrays) => {
+      const total = arrays.reduce((sum, a) => sum + a.length, 0);
+      const out = new Uint8Array(total); let offset = 0;
+      for (const a of arrays) { out.set(a, offset); offset += a.length; }
+      return out;
+    };
+    const extOf = (name) => { const i = name.lastIndexOf('.'); return i >= 0 ? name.slice(i).toLowerCase() : ''; };
+    const detectFormat = (b) => {
+      if (b.length >= 3 && b[0]===0xff && b[1]===0xd8 && b[2]===0xff) return 'jpeg';
+      if (b.length >= 8 && asAscii(b,0,8)==='\x89PNG\r\n\x1a\n') return 'png';
+      if (b.length >= 12 && asAscii(b,0,4)==='RIFF' && asAscii(b,8,4)==='WEBP') return 'webp';
+      if (b.length >= 6 && (asAscii(b,0,6)==='GIF87a' || asAscii(b,0,6)==='GIF89a')) return 'gif';
+      return null;
+    };
+    const formatLabel = (f) => ({jpeg:'JPEG',png:'PNG',webp:'WebP',gif:'GIF'}[f] || f.toUpperCase());
+
+    // EXIF orientation is the only camera field retained when needed to keep the photo upright.
+    function readOrientation(bytes, start = 0, length = bytes.length - start) {
+      const end = start + length;
+      let t = start;
+      if (end - t >= 6 && asAscii(bytes,t,6)==='Exif\0\0') t += 6;
+      if (end - t < 8) return 0;
+      const order = asAscii(bytes,t,2);
+      if (order !== 'II' && order !== 'MM') return 0;
+      const le = order === 'II';
+      const r16 = (i) => { if (i < t || i + 2 > end) throw new Error('Invalid EXIF data.'); return le ? u16le(bytes,i) : u16be(bytes,i); };
+      const r32 = (i) => { if (i < t || i + 4 > end) throw new Error('Invalid EXIF data.'); return le ? u32le(bytes,i) : u32be(bytes,i); };
+      try {
+        if (r16(t+2) !== 42) return 0;
+        const ifd = t + r32(t+4);
+        if (ifd + 2 > end) return 0;
+        const count = r16(ifd);
+        for (let n=0; n<count; n++) {
+          const e = ifd + 2 + n*12;
+          if (e + 12 > end) return 0;
+          if (r16(e) === 0x0112 && r16(e+2) === 3 && r32(e+4) >= 1) {
+            let value;
+            if (r32(e+4) === 1) value = r16(e+8);
+            else { const ptr = t + r32(e+8); value = r16(ptr); }
+            return value >= 1 && value <= 8 ? value : 0;
+          }
+        }
+      } catch (_) { return 0; }
+      return 0;
+    }
+    const minimalTiff = (orientation) => new Uint8Array([
+      0x49,0x49,0x2a,0x00,0x08,0x00,0x00,0x00,
+      0x01,0x00,0x12,0x01,0x03,0x00,0x01,0x00,0x00,0x00,
+      orientation,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    ]);
+    const minimalExif = (orientation) => concat([new TextEncoder().encode('Exif\0\0'), minimalTiff(orientation)]);
+    const startsWithAscii = (b, at, text) => at + text.length <= b.length && asAscii(b,at,text.length) === text;
+
+    function stripJpeg(b) {
+      if (b.length < 4 || b[0]!==0xff || b[1]!==0xd8) throw new Error('Invalid JPEG file.');
+      const parts = [b.slice(0,2)]; let p=2, removed=0, orientationKept=false, foundEOI=false;
+      while (p < b.length) {
+        const markerStart = p;
+        if (b[p] !== 0xff) throw new Error('Could not read the JPEG structure.');
+        p++;
+        while (p < b.length && b[p] === 0xff) p++;
+        if (p >= b.length) break;
+        const marker = b[p++];
+        if (marker === 0xd9) { parts.push(b.slice(markerStart,p)); foundEOI=true; break; }
+        if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+          parts.push(b.slice(markerStart,p)); continue;
+        }
+        if (p + 2 > b.length) throw new Error('JPEG segment is incomplete.');
+        const segLength = u16be(b,p);
+        if (segLength < 2 || p + segLength > b.length) throw new Error('JPEG segment length is invalid.');
+        const end = p + segLength, payload = p + 2;
+        let keep = true, replacement = null;
+        if (marker >= 0xe0 && marker <= 0xef) {
+          keep = false;
+          if (marker === 0xe2 && startsWithAscii(b,payload,'ICC_PROFILE\0')) keep = true;
+          else if (marker === 0xee && startsWithAscii(b,payload,'Adobe')) keep = true;
+          else if (marker === 0xe1 && startsWithAscii(b,payload,'Exif\0\0')) {
+            let orientation = 0;
+            try { orientation = readOrientation(b,payload,end-payload); } catch (_) { orientation = 0; }
+            if (orientation > 1 && !orientationKept) { replacement = makeJpegExif(orientation); orientationKept=true; }
+          }
+        } else if (marker === 0xfe) keep = false;
+        if (keep) parts.push(b.slice(markerStart,end));
+        else { removed++; if (replacement) parts.push(replacement); }
+        p = end;
+        if (marker === 0xda) {
+          const scanStart = p;
+          while (p < b.length) {
+            if (b[p] !== 0xff) { p++; continue; }
+            if (p + 1 >= b.length) break;
+            const next = b[p+1];
+            if (next === 0x00 || (next >= 0xd0 && next <= 0xd7)) { p += 2; continue; }
+            if (next === 0xff) break;
+            break;
+          }
+          if (p > scanStart) parts.push(b.slice(scanStart,p));
+        }
+      }
+      if (!foundEOI) throw new Error('The JPEG file is incomplete or corrupted.');
+      return {bytes:concat(parts), removed, note:orientationKept ? 'Image orientation was preserved; other EXIF fields were removed.' : ''};
+    }
+    function makeJpegExif(orientation) {
+      const payload = minimalExif(orientation), out = new Uint8Array(4 + payload.length);
+      out[0]=0xff; out[1]=0xe1; out[2]=(payload.length+2)>>8; out[3]=(payload.length+2)&255; out.set(payload,4); return out;
+    }
+
+    // PNG CRC is needed only for the tiny, sanitized orientation chunk we may rebuild.
+    const CRC_TABLE = (() => { const t = new Uint32Array(256); for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t; })();
+    function crc32(bytes) { let c=0xffffffff; for(const x of bytes)c=CRC_TABLE[(c^x)&255]^(c>>>8);return (c^0xffffffff)>>>0; }
+    function be32(n) { return new Uint8Array([(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255]); }
+    function makePngChunk(name,data) {
+      const type = new TextEncoder().encode(name), body=concat([type,data]), crc=be32(crc32(body));
+      return concat([be32(data.length),type,data,crc]);
+    }
+    function stripPng(b) {
+      const sig = [137,80,78,71,13,10,26,10];
+      if (b.length < 20 || !sig.every((x,i)=>b[i]===x)) throw new Error('Invalid PNG file.');
+      const parts=[b.slice(0,8)]; let p=8, removed=0, orientationKept=false, ended=false;
+      const keepAncillary = new Set(['cHRM','gAMA','iCCP','sBIT','sRGB','bKGD','tRNS','hIST','acTL','fcTL','fdAT','cICP','mDCv','cLLi']);
+      while(p+12<=b.length){
+        const len=u32be(b,p), name=asAscii(b,p+4,4), end=p+12+len;
+        if (len > b.length || end > b.length) throw new Error('PNG chunk length is invalid.');
+        const dataStart=p+8, dataEnd=dataStart+len;
+        if (crc32(b.slice(p+4,dataEnd)) !== u32be(b,dataEnd)) throw new Error('PNG CRC check failed. The file may be damaged or incomplete.');
+        if (name==='IEND') { parts.push(b.slice(p,end)); ended=true; break; }
+        if (name==='eXIf') {
+          let orient=0; try { orient=readOrientation(b,dataStart,len); } catch (_) { orient=0; }
+          if(orient>1 && !orientationKept){parts.push(makePngChunk('eXIf',minimalTiff(orient)));orientationKept=true;}
+          removed++;
+        } else if (['tEXt','zTXt','iTXt','tIME','pHYs','sPLT'].includes(name)) {
+          removed++;
+        } else {
+          const critical = name.charCodeAt(0) >= 65 && name.charCodeAt(0) <= 90;
+          if (critical || keepAncillary.has(name)) parts.push(b.slice(p,end));
+          else removed++;
+        }
+        p=end;
+      }
+      if(!ended) throw new Error('The PNG file does not contain an IEND chunk.');
+      return {bytes:concat(parts),removed,note:orientationKept?'Image orientation was preserved; other EXIF fields were removed.':''};
+    }
+
+    function readWebpChunks(b) {
+      if (b.length<12 || asAscii(b,0,4)!=='RIFF' || asAscii(b,8,4)!=='WEBP') throw new Error('Invalid WebP file.');
+      const riffEnd=u32le(b,4)+8;
+      if(riffEnd> b.length || riffEnd<12) throw new Error('WebP file size is invalid.');
+      const chunks=[]; let p=12;
+      while(p+8<=riffEnd){
+        const name=asAscii(b,p,4), len=u32le(b,p+4), start=p+8, end=start+len, next=end+(len&1);
+        if(end>riffEnd || next>riffEnd) throw new Error('WebP chunk length is invalid.');
+        chunks.push({name,data:b.slice(start,end)}); p=next;
+      }
+      if(p!==riffEnd) throw new Error('WebP chunk structure is invalid.');
+      return chunks;
+    }
+    function writeWebpChunks(chunks) {
+      const parts=[new TextEncoder().encode('RIFF'),new Uint8Array(4),new TextEncoder().encode('WEBP')];
+      const chunkParts=[]; let total=12;
+      for(const ch of chunks){
+        const name=new TextEncoder().encode(ch.name), size=new Uint8Array([ch.data.length&255,(ch.data.length>>>8)&255,(ch.data.length>>>16)&255,(ch.data.length>>>24)&255]);
+        const pad=(ch.data.length&1)?new Uint8Array([0]):new Uint8Array(0);
+        chunkParts.push(name,size,ch.data,pad); total+=8+ch.data.length+pad.length;
+      }
+      const riffSize=total-8;
+      const all=concat([parts[0],new Uint8Array([riffSize&255,(riffSize>>>8)&255,(riffSize>>>16)&255,(riffSize>>>24)&255]),parts[2],...chunkParts]);
+      return all;
+    }
+    function stripWebp(b) {
+      const raw=readWebpChunks(b); let removed=0, orientationKept=false;
+      const visual = new Set(['VP8 ','VP8L','VP8X','ALPH','ANIM','ANMF','ICCP']);
+      const chunks=[];
+      for(const ch of raw){
+        if(ch.name==='EXIF'){
+          let orient=0; try{orient=readOrientation(ch.data,0,ch.data.length);}catch(_){orient=0;}
+          if(orient>1&&!orientationKept){chunks.push({name:'EXIF',data:minimalExif(orient)});orientationKept=true;}
+          removed++;
+        }else if(ch.name==='XMP '){removed++;}
+        else if(visual.has(ch.name)){chunks.push({name:ch.name,data:ch.data.slice()});}
+        else {removed++;}
+      }
+      const hasImage=chunks.some(c=>['VP8 ','VP8L','ANMF'].includes(c.name));
+      if(!hasImage) throw new Error('No image data was found in the WebP file.');
+      for(const ch of chunks){
+        if(ch.name==='VP8X' && ch.data.length>=1){ch.data[0] &= ~0x0c; if(orientationKept)ch.data[0] |= 0x08;}
+      }
+      return {bytes:writeWebpChunks(chunks),removed,note:orientationKept?'Image orientation was preserved; other EXIF/XMP fields were removed.':''};
+    }
+
+    function skipGifSubBlocks(b, p) {
+      while(p<b.length){const size=b[p++];if(size===0)return p;p+=size;if(p>b.length)throw new Error('GIF sub-block length is invalid.');}
+      throw new Error('GIF sub-blocks are incomplete.');
+    }
+    function stripGif(b) {
+      if(b.length<14 || !['GIF87a','GIF89a'].includes(asAscii(b,0,6)))throw new Error('Invalid GIF file.');
+      const parts=[b.slice(0,13)];let p=13,removed=0,ended=false;
+      const screenPacked=b[10];
+      if(screenPacked&0x80){const size=3*(1<<((screenPacked&7)+1));if(p+size>b.length)throw new Error('GIF color table is incomplete.');parts.push(b.slice(p,p+size));p+=size;}
+      while(p<b.length){
+        const start=p, introducer=b[p++];
+        if(introducer===0x3b){parts.push(b.slice(start,p));ended=true;break;}
+        if(introducer===0x2c){
+          if(p+9>b.length)throw new Error('GIF image descriptor is incomplete.');
+          const packed=b[p+8];p+=9;
+          if(packed&0x80){const size=3*(1<<((packed&7)+1));if(p+size>b.length)throw new Error('GIF local color table is incomplete.');p+=size;}
+          if(p>=b.length)throw new Error('GIF LZW data is incomplete.');p++;
+          p=skipGifSubBlocks(b,p);parts.push(b.slice(start,p));continue;
+        }
+        if(introducer===0x21){
+          if(p>=b.length)throw new Error('GIF extension is incomplete.');
+          const label=b[p++], blocksStart=p;let appId='';
+          if(label===0xff || label===0x01){
+            if(p>=b.length)throw new Error('GIF extension header is incomplete.');
+            const n=b[p];if(p+1+n>b.length)throw new Error('GIF extension header is invalid.');
+            appId=asAscii(b,p+1,n);p+=1+n;p=skipGifSubBlocks(b,p);
+          }else{p=skipGifSubBlocks(b,p);}
+          let keep=true;
+          if(label===0xfe)keep=false;
+          if(label===0xff && !['NETSCAPE2.0','ANIMEXTS1.0'].includes(appId) && !appId.startsWith('ICCRGBG'))keep=false;
+          if(keep)parts.push(b.slice(start,p));else removed++;
+          continue;
+        }
+        throw new Error('Unrecognized GIF data block.');
+      }
+      if(!ended)throw new Error('The GIF file does not contain a trailer block.');
+      return {bytes:concat(parts),removed,note:''};
+    }
+
+    function stripMetadata(bytes, format) {
+      if(format==='jpeg')return stripJpeg(bytes);
+      if(format==='png')return stripPng(bytes);
+      if(format==='webp')return stripWebp(bytes);
+      if(format==='gif')return stripGif(bytes);
+      throw new Error('This file format is not supported for safe, lossless cleaning.');
+    }
+    function showError(message){errorBox.textContent=message;errorBox.classList.add('visible');}
+    function clearError(){errorBox.textContent='';errorBox.classList.remove('visible');}
+    function revoke(url){if(url){try{URL.revokeObjectURL(url);}catch(_){}}}
+    function clearOutput(){revoke(outputUrl);outputUrl=null;outputBlob=null;outputName='';result.classList.remove('visible');}
+    function reset(){loadVersion++;selectedFile=null;selectedFormat=null;selectedBytes=null;input.value='';clearError();clearOutput();revoke(previewUrl);previewUrl=null;$('fileRow').classList.remove('visible');cleanBtn.disabled=true;resetBtn.classList.add('hidden');$('fileName').textContent='';$('fileMeta').textContent='';$('fileThumb').removeAttribute('src');dropzone.classList.remove('hidden');}
+    function loadFile(file){
+      const version=++loadVersion;
+      clearError();clearOutput();
+      selectedFile=null;selectedFormat=null;selectedBytes=null;cleanBtn.disabled=true;$('fileRow').classList.remove('visible');dropzone.classList.remove('hidden');
+      revoke(previewUrl);previewUrl=null;$('fileThumb').removeAttribute('src');
+      if(!file)return;
+      if(file.size>MAX_BYTES){showError('The file exceeds the 100 MB limit. Choose a smaller file.');return;}
+      if(file.size===0){showError('The selected file is empty.');return;}
+      const reader=new FileReader();
+      reader.onerror=()=>{if(version===loadVersion)showError('Could not read the file. Please try another file.');};
+      reader.onload=()=>{
+        if(version!==loadVersion)return;
+        try{
+          const bytes=new Uint8Array(reader.result), detected=detectFormat(bytes);
+          if(!detected){showError('Unsupported format. Lossless cleaning is currently available for JPG, PNG, WebP, and GIF. The file will not be converted by recompression.');return;}
+          selectedFile=file;selectedFormat=detected;dropzone.classList.add('hidden');
+          $('fileName').textContent=file.name;
+          $('fileMeta').textContent=`${formatLabel(detected)} · ${fmtSize(file.size)} · Image data will not be re-encoded`;
+          $('fileTypeIcon').textContent=detected==='jpeg'?'JPG':detected.toUpperCase();
+          revoke(previewUrl);previewUrl=URL.createObjectURL(file);$('fileThumb').src=previewUrl;
+          $('fileRow').classList.add('visible');cleanBtn.disabled=false;resetBtn.classList.remove('hidden');
+          selectedBytes=bytes;
+        }catch(e){showError(e.message||'Could not inspect the file.');}
+      };
+      reader.readAsArrayBuffer(file);
+    }
+    chooseBtn.addEventListener('click',(e)=>{e.stopPropagation();input.click();});
+    dropzone.addEventListener('click',(e)=>{if(e.target!==chooseBtn)input.click();});
+    dropzone.addEventListener('keydown',(e)=>{if((e.key==='Enter'||e.key===' ')&&e.target===dropzone){e.preventDefault();input.click();}});
+    input.addEventListener('change',()=>loadFile(input.files&&input.files[0]));
+    for(const ev of ['dragenter','dragover'])dropzone.addEventListener(ev,(e)=>{e.preventDefault();e.dataTransfer.dropEffect='copy';dropzone.classList.add('dragover');});
+    for(const ev of ['dragleave','drop'])dropzone.addEventListener(ev,(e)=>{e.preventDefault();dropzone.classList.remove('dragover');});
+    dropzone.addEventListener('drop',(e)=>{const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)loadFile(f);});
+    resetBtn.addEventListener('click',reset);
+    cleanBtn.addEventListener('click',()=>{
+      if(!selectedFile||!selectedBytes||!selectedFormat)return;
+      const sourceFile=selectedFile, sourceBytes=selectedBytes, sourceFormat=selectedFormat;
+      cleanBtn.disabled=true;resetBtn.disabled=true;clearError();clearOutput();cleanBtn.textContent='Cleaning…';
+      // Yield once so the disabled button and status update render before parsing a large file.
+      setTimeout(()=>{
+        try{
+          const outcome=stripMetadata(sourceBytes,sourceFormat);
+          outputBlob=new Blob([outcome.bytes],{type:({jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif'})[sourceFormat]});
+          outputUrl=URL.createObjectURL(outputBlob);
+          const base=sourceFile.name.replace(/\.[^.]+$/,'')||'photo';
+          outputName=`${base}-cleaned${extOf(sourceFile.name)||({jpeg:'.jpg',png:'.png',webp:'.webp',gif:'.gif'})[sourceFormat]}`;
+          $('resultTitle').textContent='Cleaning complete';
+          let text=outcome.removed>0?`Removed ${outcome.removed} metadata/extension block(s).`:'No known removable privacy metadata blocks were found.';
+          text+=` Image data was not recompressed; output size: ${fmtSize(outcome.bytes.length)}.`;
+          if(outcome.note)text+=' '+outcome.note;
+          $('resultText').textContent=text;result.classList.add('visible');
+          $('downloadBtn').innerHTML='Download clean file <span class="button-arrow" aria-hidden="true">↓</span>'; 
+        }catch(e){showError(e.message||'An error occurred while cleaning. The file was left unchanged.');}
+        finally{cleanBtn.disabled=!selectedFile;resetBtn.disabled=false;cleanBtn.innerHTML='Remove metadata <span aria-hidden="true">→</span>';}
+      },30);
+    });
+    $('downloadBtn').addEventListener('click',()=>{
+      if(!outputUrl||!outputBlob)return;
+      const a=document.createElement('a');a.href=outputUrl;a.download=outputName;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();
+    });
+  })();
+  </script>
+</body>
+</html>
